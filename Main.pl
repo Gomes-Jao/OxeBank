@@ -8,7 +8,7 @@ my $account_id = $uuid_gen->create_str;
 
 my $account_data = {
     #id => $account_id,  # Atribuir o UUID como ID da conta
-    CPF => '1234',
+    CPF => '12345678',
     #account_number => '123456789',
     #balance => 1000,
     owner => 'João Silva',

@@ -7,81 +7,6 @@ use REST::Client;
 use JSON;
 use Data::UUID;
 
-=begin
-sub create_account {
-    my ($account_data) = @_;
-
-    my $firebase_url = 'https://oxebank-account-default-rtdb.firebaseio.com/accounts.json'; # URL do seu banco de dados Firebase
-
-    my $client = REST::Client->new();
-    $client->GET($firebase_url);
-
-    if($client->responseCode() == 200) {
-        my $response_data = decode_json($client->responseContent());
-        foreach my $account_cpf (keys %$response_data) {
-            my $db_account_data = $response_data->{$account_cpf};
-            if ($db_account_data->{'CPF'} eq $account_data->{CPF}) {
-                return 0; #Ja existe uma conta com este numero
-            }
-        }
-
-        my $uuid_gen = Data::UUID->new;
-        #my $account_id = $uuid_gen->create_str;
-
-        $account_data = {
-            account_number => $uuid_gen->create_str,
-            balance => 0,
-            type => 'CC';
-        }
-        
-        $client->POST($firebase_url, encode_json($account_data), {'Content-Type' => 'application/json'});
-
-        if ($client->responseCode() == 200) {
-        return 1; # Sucesso
-        } else {
-            return 0; # Falha
-        }
-    }
-} =cut
-=cut
-=begin
-sub create_account {
-    my ($account_data) = @_;
-
-    my $firebase_url = 'https://oxebank-account-default-rtdb.firebaseio.com/accounts.json'; # URL do seu banco de dados Firebase
-
-    # Construir a URL para a consulta filtrada pelo cpf fornecido
-    #my $query_url = "$firebase_url?orderBy=\"CPF\"&equalTo=\"$account_cpf\"";
-    my $query_url = "$firebase_url?orderBy=\"CPF\"&equalTo=\"$account_data->{CPF}\"";
-
-    my $client = REST::Client->new();
-    $client->GET($query_url);
-
-    if ($client->responseCode() == 200) {
-        #Recuperando os dados da resposta para verificar se os dados são iguais.
-        my $response_data = decode_json($client->responseContent());
-        print "$response_data->{$account_data->{CPF}}";
-        if(exists $response_data->{$account_data->{CPF}}->{CPF}) {
-            return 0; #Já existe uma conta com este cpf.
-        }
-    }
-
-    my $uuid_gen = Data::UUID->new;
-
-    $account_data->{account_number} = $uuid_gen->create_str;
-    $account_data->{balance} = 0;
-    $account_data->{type} = 'CC';
-    
-    #$client = REST::Client->new();
-    $client->POST($firebase_url, encode_json($account_data), {'Content-Type' => 'application/json'});
-
-    if ($client->responseCode() == 200) {
-        return 1; # Sucesso
-    } else {
-        return 0; # Falha
-    }
-}
-=cut
 
 sub create_account {
     my ($account_data) = @_;
@@ -97,16 +22,12 @@ sub create_account {
     print $query_url . "\n";
     my $client_get = REST::Client->new();
     $client_get->GET($query_url);
-=begin
-    print $client->responseCode() . "\n";
-    print $client->responseContent() . "\n";
-    print $client->response_data() . "\n";
-=cut
+
     print $client_get->responseCode() . "\n";
 
     if ($client_get->responseCode() >= 200 && $client_get->responseCode() <= 300) {
         my $response_data = decode_json($client_get->responseContent());
-        #print $response_data->{$account_data->{CPF}};
+
         if (keys %$response_data) {
             return "Já existe uma conta com este CPF.";
         }
