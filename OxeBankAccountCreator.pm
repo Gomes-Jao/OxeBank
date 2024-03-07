@@ -44,7 +44,6 @@ sub create_account {
 
     if ($client_put->responseCode() >= 200 && $client_put->responseCode() <= 300) {
         my $response_data = decode_json($client_put->responseContent());
-        print $response_data->{$account_data->{CPF}};
         return "Conta criada com sucesso.";
     } else {
         return "Falha ao criar conta.";
@@ -105,34 +104,84 @@ sub credit_account {
         my $response_data = decode_json($client_get->responseContent());
 
         if(keys %$response_data) {
+            if($amount < 0) {
+                return 0; # O valor deve ser positivo
+            }
+            
             my ($account_id) = keys %$response_data;
 
             my $firebase_credit_url = "https://oxebank-account-default-rtdb.firebaseio.com/accounts/$account_id.json";
 
-            my $current_balance = $response_data->{balance};
-
-            my $new_balance = $current_balance + $amount;
-
             my $client_put = REST::Client->new();
-            $client_put->PUT($firebase_credit_url, encode_json({balance => $new_balance}));
+            $client_put->GET($firebase_credit_url);
 
-            if($client_put->responseCode() == 200) {
-                return 1;
+            if($client_put->responseCode >= 200 && $client_put->responseCode <= 300) {
+                my $balance = decode_json($client_put->responseContent());
+
+                $balance->{balance} += $amount;
+
+                $client_put->PUT($firebase_credit_url, encode_json($balance));
+
+                #my $current_balance = $response_data->{balance};
             } else {
-                return 0;
+                return 0; #Falha ao acessar os dados
             }
         } else {
             return 0; #Nenhuma conta encontrada com o número fornecido
         }
-
-        
     } else {
         return 0; #Falha ao acessar o Firebase
     }
 }
 
-sub debito {
+sub debit_account {
+    my ($account_number, $amount) = @_;
 
+    #URL do Firebase para buscar o ID da conta pelo número da conta
+    my $firebase_url = 'https://oxebank-account-default-rtdb.firebaseio.com/accounts.json';
+
+    #Construir a URL para a consulta filtrada pelo número da conta
+    my $query_url = "$firebase_url?orderBy=\"account_number\"&equalTo=\"$account_number\"";
+
+    #Fazer uma solicitação GET para obter os dados da conta
+    my $client_get = REST::Client->new();
+    $client_get->GET($firebase_url);
+
+    #Verificar se a solicitação foi bem-sucedida
+    if($client_get->responseCode() == 200) {
+        my $response_data = decode_json($client_get->responseContent());
+
+        if(keys %$response_data) {
+            if($amount < 0) {
+                return 0; # O valor deve ser positivo
+            }
+            
+            my ($account_id) = keys %$response_data;
+
+            my $firebase_debit_url = "https://oxebank-account-default-rtdb.firebaseio.com/accounts/$account_id.json";
+
+            my $client_remove = REST::Client->new();
+            $client_remove->GET($firebase_debit_url);
+
+            if($client_remove->responseCode >= 200 && $client_remove->responseCode <= 300) {
+                my $balance = decode_json($client_remove->responseContent());
+                if($balance->{balance} >= $amount) {
+                    $balance->{balance} -= $amount;
+
+                    $client_remove->PUT($firebase_debit_url, encode_json($balance));
+                } else {
+                    return 0; # Não pode tirar mais do que a conta tem
+                }
+                #my $current_balance = $response_data->{balance};
+            } else {
+                return 0; #Falha ao acessar os dados
+            }
+        } else {
+            return 0; #Nenhuma conta encontrada com o número fornecido
+        }
+    } else {
+        return 0; #Falha ao acessar o Firebase
+    }
 }
 
 1;
