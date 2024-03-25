@@ -22,7 +22,7 @@ my $account_cpf = "12643684484";#$account_data->{CPF};
 #credit($account_cpf, 1230.27);
 #debit($account_cpf, 1230);
 #delete_account($account_cpf);
-#check($account_cpf);
+check($account_cpf);
 
 sub create {
     my($account_data) = @_;
