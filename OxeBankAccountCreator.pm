@@ -50,7 +50,6 @@ sub create_account {
     }
 }
 
-
 sub delete_account {
     my ($account_cpf) = @_;
 
